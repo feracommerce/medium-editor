@@ -1079,19 +1079,90 @@ MediumEditor.extensions = {};
             return false;
         },
 
-        cleanListDOM: function (ownerDocument, element) {
-            if (element.nodeName.toLowerCase() !== 'li') {
-                return;
+        findFirstTextNodeInSelection: function (selection) {
+            if (selection.anchorNode.nodeType === 3) {
+                return selection.anchorNode;
             }
 
-            var list = element.parentElement;
+            var node = selection.anchorNode.firstChild;
 
-            if (list.parentElement.nodeName.toLowerCase() === 'p') { // yes we need to clean up
-                Util.unwrap(list.parentElement, ownerDocument);
+            while (node) {
+                if (selection.containsNode(node, true)) {
+                    if (node.nodeType === 3) {
+                        return node;
+                    } else {
+                        node = node.firstChild;
+                    }
+                } else {
+                    node = node.nextSibling;
+                }
+            }
 
-                // move cursor at the end of the text inside the list
-                // for some unknown reason, the cursor is moved to end of the "visual" line
-                MediumEditor.selection.moveCursor(ownerDocument, element.firstChild, element.firstChild.textContent.length);
+            return null;
+        },
+
+        cleanListDOM: function (ownerDocument, element) {
+            if (element.nodeName.toLowerCase() !== 'li') {
+                if (this.isIE || this.isEdge) {
+                    return;
+                }
+
+                var selection = ownerDocument.getSelection(),
+                    newRange = ownerDocument.createRange(),
+                    oldRange = selection.getRangeAt(0),
+                    startContainer = oldRange.startContainer,
+                    startOffset = oldRange.startOffset,
+                    endContainer = oldRange.endContainer,
+                    endOffset = oldRange.endOffset,
+                    node, newNode, nextNode, moveEndOffset;
+
+                if (element.nodeName.toLowerCase() === 'span') {
+                    // Chrome & Safari unwraps removed li elements into a span
+                    node = element;
+                    moveEndOffset = false;
+                } else {
+                    // FF leaves them as text nodes
+                    node = this.findFirstTextNodeInSelection(selection);
+                    moveEndOffset = startContainer.nodeType !== 3;
+                }
+
+                while (node) {
+                    if (node.nodeName.toLowerCase() !== 'span' && node.nodeType !== 3) {
+                        break;
+                    }
+
+                    if (node.nextSibling && node.nextSibling.nodeName.toLowerCase() === 'br') {
+                        node.nextSibling.remove();
+
+                        if (moveEndOffset) {
+                            endOffset--;
+                        }
+                    }
+
+                    nextNode = node.nextSibling;
+
+                    newNode = ownerDocument.createElement('p');
+                    node.parentNode.replaceChild(newNode, node);
+                    newNode.appendChild(node);
+
+                    node = nextNode;
+                }
+
+                // Restore selection
+                newRange.setStart(startContainer, startOffset);
+                newRange.setEnd(endContainer, endOffset);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            } else {
+                var list = element.parentElement;
+
+                if (list.parentElement.nodeName.toLowerCase() === 'p') { // yes we need to clean up
+                    Util.unwrap(list.parentElement, ownerDocument);
+
+                    // move cursor at the end of the text inside the list
+                    // for some unknown reason, the cursor is moved to end of the "visual" line
+                    MediumEditor.selection.moveCursor(ownerDocument, element.firstChild, element.firstChild.textContent.length);
+                }
             }
         },
 
@@ -3302,7 +3373,7 @@ MediumEditor.extensions = {};
             },
             useQueryState: true,
             contentDefault: '<b>B</b>',
-            contentFA: '<i class="fa fa-bold"></i>'
+            contentFA: '<i class="far fa-bold"></i>'
         },
         'italic': {
             name: 'italic',
@@ -3315,7 +3386,7 @@ MediumEditor.extensions = {};
             },
             useQueryState: true,
             contentDefault: '<b><i>I</i></b>',
-            contentFA: '<i class="fa fa-italic"></i>'
+            contentFA: '<i class="far fa-italic"></i>'
         },
         'underline': {
             name: 'underline',
@@ -3328,7 +3399,7 @@ MediumEditor.extensions = {};
             },
             useQueryState: true,
             contentDefault: '<b><u>U</u></b>',
-            contentFA: '<i class="fa fa-underline"></i>'
+            contentFA: '<i class="far fa-underline"></i>'
         },
         'strikethrough': {
             name: 'strikethrough',
@@ -3341,7 +3412,7 @@ MediumEditor.extensions = {};
             },
             useQueryState: true,
             contentDefault: '<s>A</s>',
-            contentFA: '<i class="fa fa-strikethrough"></i>'
+            contentFA: '<i class="far fa-strikethrough"></i>'
         },
         'superscript': {
             name: 'superscript',
@@ -3352,7 +3423,7 @@ MediumEditor.extensions = {};
                https://github.com/guardian/scribe/blob/master/BROWSERINCONSISTENCIES.md#documentquerycommandstate */
             // useQueryState: true
             contentDefault: '<b>x<sup>1</sup></b>',
-            contentFA: '<i class="fa fa-superscript"></i>'
+            contentFA: '<i class="far fa-superscript"></i>'
         },
         'subscript': {
             name: 'subscript',
@@ -3363,7 +3434,7 @@ MediumEditor.extensions = {};
                https://github.com/guardian/scribe/blob/master/BROWSERINCONSISTENCIES.md#documentquerycommandstate */
             // useQueryState: true
             contentDefault: '<b>x<sub>1</sub></b>',
-            contentFA: '<i class="fa fa-subscript"></i>'
+            contentFA: '<i class="far fa-subscript"></i>'
         },
         'image': {
             name: 'image',
@@ -3371,7 +3442,7 @@ MediumEditor.extensions = {};
             aria: 'image',
             tagNames: ['img'],
             contentDefault: '<b>image</b>',
-            contentFA: '<i class="fa fa-picture-o"></i>'
+            contentFA: '<i class="far fa-picture-o"></i>'
         },
         'html': {
             name: 'html',
@@ -3379,7 +3450,7 @@ MediumEditor.extensions = {};
             aria: 'evaluate html',
             tagNames: ['iframe', 'object'],
             contentDefault: '<b>html</b>',
-            contentFA: '<i class="fa fa-code"></i>'
+            contentFA: '<i class="far fa-code"></i>'
         },
         'orderedlist': {
             name: 'orderedlist',
@@ -3388,7 +3459,7 @@ MediumEditor.extensions = {};
             tagNames: ['ol'],
             useQueryState: true,
             contentDefault: '<b>1.</b>',
-            contentFA: '<i class="fa fa-list-ol"></i>'
+            contentFA: '<i class="far fa-list-ol"></i>'
         },
         'unorderedlist': {
             name: 'unorderedlist',
@@ -3397,7 +3468,7 @@ MediumEditor.extensions = {};
             tagNames: ['ul'],
             useQueryState: true,
             contentDefault: '<b>&bull;</b>',
-            contentFA: '<i class="fa fa-list-ul"></i>'
+            contentFA: '<i class="far fa-list-ul"></i>'
         },
         'indent': {
             name: 'indent',
@@ -3405,7 +3476,7 @@ MediumEditor.extensions = {};
             aria: 'indent',
             tagNames: [],
             contentDefault: '<b>&rarr;</b>',
-            contentFA: '<i class="fa fa-indent"></i>'
+            contentFA: '<i class="far fa-indent"></i>'
         },
         'outdent': {
             name: 'outdent',
@@ -3413,7 +3484,7 @@ MediumEditor.extensions = {};
             aria: 'outdent',
             tagNames: [],
             contentDefault: '<b>&larr;</b>',
-            contentFA: '<i class="fa fa-outdent"></i>'
+            contentFA: '<i class="far fa-outdent"></i>'
         },
         'justifyCenter': {
             name: 'justifyCenter',
@@ -3425,7 +3496,7 @@ MediumEditor.extensions = {};
                 value: 'center'
             },
             contentDefault: '<b>C</b>',
-            contentFA: '<i class="fa fa-align-center"></i>'
+            contentFA: '<i class="far fa-align-center"></i>'
         },
         'justifyFull': {
             name: 'justifyFull',
@@ -3437,7 +3508,7 @@ MediumEditor.extensions = {};
                 value: 'justify'
             },
             contentDefault: '<b>J</b>',
-            contentFA: '<i class="fa fa-align-justify"></i>'
+            contentFA: '<i class="far fa-align-justify"></i>'
         },
         'justifyLeft': {
             name: 'justifyLeft',
@@ -3449,7 +3520,7 @@ MediumEditor.extensions = {};
                 value: 'left'
             },
             contentDefault: '<b>L</b>',
-            contentFA: '<i class="fa fa-align-left"></i>'
+            contentFA: '<i class="far fa-align-left"></i>'
         },
         'justifyRight': {
             name: 'justifyRight',
@@ -3461,7 +3532,7 @@ MediumEditor.extensions = {};
                 value: 'right'
             },
             contentDefault: '<b>R</b>',
-            contentFA: '<i class="fa fa-align-right"></i>'
+            contentFA: '<i class="far fa-align-right"></i>'
         },
         // Known inline elements that are not removed, or not removed consistantly across browsers:
         // <span>, <label>, <br>
@@ -3470,7 +3541,7 @@ MediumEditor.extensions = {};
             aria: 'remove formatting',
             action: 'removeFormat',
             contentDefault: '<b>X</b>',
-            contentFA: '<i class="fa fa-eraser"></i>'
+            contentFA: '<i class="far fa-eraser"></i>'
         },
 
         /***** Buttons for appending block elements (append-<element> action) *****/
@@ -3481,7 +3552,7 @@ MediumEditor.extensions = {};
             aria: 'blockquote',
             tagNames: ['blockquote'],
             contentDefault: '<b>&ldquo;</b>',
-            contentFA: '<i class="fa fa-quote-right"></i>'
+            contentFA: '<i class="far fa-quote-right"></i>'
         },
         'pre': {
             name: 'pre',
@@ -3489,7 +3560,7 @@ MediumEditor.extensions = {};
             aria: 'preformatted text',
             tagNames: ['pre'],
             contentDefault: '<b>0101</b>',
-            contentFA: '<i class="fa fa-code fa-lg"></i>'
+            contentFA: '<i class="far fa-code fa-lg"></i>'
         },
         'h1': {
             name: 'h1',
@@ -3497,7 +3568,7 @@ MediumEditor.extensions = {};
             aria: 'header type one',
             tagNames: ['h1'],
             contentDefault: '<b>H1</b>',
-            contentFA: '<i class="fa fa-header"><sup>1</sup>'
+            contentFA: '<i class="far fa-header"><sup>1</sup>'
         },
         'h2': {
             name: 'h2',
@@ -3505,7 +3576,7 @@ MediumEditor.extensions = {};
             aria: 'header type two',
             tagNames: ['h2'],
             contentDefault: '<b>H2</b>',
-            contentFA: '<i class="fa fa-header"><sup>2</sup>'
+            contentFA: '<i class="far fa-header"><sup>2</sup>'
         },
         'h3': {
             name: 'h3',
@@ -3513,7 +3584,7 @@ MediumEditor.extensions = {};
             aria: 'header type three',
             tagNames: ['h3'],
             contentDefault: '<b>H3</b>',
-            contentFA: '<i class="fa fa-header"><sup>3</sup>'
+            contentFA: '<i class="far fa-header"><sup>3</sup>'
         },
         'h4': {
             name: 'h4',
@@ -3521,7 +3592,7 @@ MediumEditor.extensions = {};
             aria: 'header type four',
             tagNames: ['h4'],
             contentDefault: '<b>H4</b>',
-            contentFA: '<i class="fa fa-header"><sup>4</sup>'
+            contentFA: '<i class="far fa-header"><sup>4</sup>'
         },
         'h5': {
             name: 'h5',
@@ -3529,7 +3600,7 @@ MediumEditor.extensions = {};
             aria: 'header type five',
             tagNames: ['h5'],
             contentDefault: '<b>H5</b>',
-            contentFA: '<i class="fa fa-header"><sup>5</sup>'
+            contentFA: '<i class="far fa-header"><sup>5</sup>'
         },
         'h6': {
             name: 'h6',
@@ -3537,7 +3608,7 @@ MediumEditor.extensions = {};
             aria: 'header type six',
             tagNames: ['h6'],
             contentDefault: '<b>H6</b>',
-            contentFA: '<i class="fa fa-header"><sup>6</sup>'
+            contentFA: '<i class="far fa-header"><sup>6</sup>'
         }
     };
 
@@ -3593,7 +3664,7 @@ MediumEditor.extensions = {};
             return false;
         },
 
-        /* hideForm: [function ()]
+        /* showForm: [function ()]
          *
          * This function should show the form element inside
          * the toolbar container
@@ -3708,7 +3779,7 @@ MediumEditor.extensions = {};
         aria: 'link',
         tagNames: ['a'],
         contentDefault: '<b>#</b>',
-        contentFA: '<i class="fa fa-link"></i>',
+        contentFA: '<i class="far fa-link"></i>',
 
         init: function () {
             MediumEditor.extensions.form.prototype.init.apply(this, arguments);
@@ -3759,12 +3830,12 @@ MediumEditor.extensions = {};
 
             template.push(
                 '<a href="#" class="medium-editor-toolbar-save">',
-                this.getEditorOption('buttonLabels') === 'fontawesome' ? '<i class="fa fa-check"></i>' : this.formSaveLabel,
+                this.getEditorOption('buttonLabels') === 'fontawesome' ? '<i class="far fa-check"></i>' : this.formSaveLabel,
                 '</a>'
             );
 
             template.push('<a href="#" class="medium-editor-toolbar-close">',
-                this.getEditorOption('buttonLabels') === 'fontawesome' ? '<i class="fa fa-times"></i>' : this.formCloseLabel,
+                this.getEditorOption('buttonLabels') === 'fontawesome' ? '<i class="far fa-times"></i>' : this.formCloseLabel,
                 '</a>');
 
             // both of these options are slightly moot with the ability to
@@ -3788,8 +3859,8 @@ MediumEditor.extensions = {};
                 // and provide similar access to a `fa-` icon default.
                 template.push(
                     '<div class="medium-editor-toolbar-form-row">',
-                    '<input type="checkbox" class="medium-editor-toolbar-anchor-button">',
-                    '<label>',
+                    '<input type="checkbox" class="medium-editor-toolbar-anchor-button" id="medium-editor-toolbar-anchor-button-field-' + this.getEditorId() + '">',
+                    '<label for="medium-editor-toolbar-anchor-button-field-' + this.getEditorId() + '">',
                     this.customClassOptionText,
                     '</label>',
                     '</div>'
@@ -4789,7 +4860,7 @@ MediumEditor.extensions = {};
         action: 'fontName',
         aria: 'change font name',
         contentDefault: '&#xB1;', // ±
-        contentFA: '<i class="fa fa-font"></i>',
+        contentFA: '<i class="far fa-font"></i>',
 
         fonts: ['', 'Arial', 'Verdana', 'Times New Roman'],
 
@@ -4902,7 +4973,7 @@ MediumEditor.extensions = {};
             save.setAttribute('href', '#');
             save.className = 'medium-editor-toobar-save';
             save.innerHTML = this.getEditorOption('buttonLabels') === 'fontawesome' ?
-                             '<i class="fa fa-check"></i>' :
+                             '<i class="far fa-check"></i>' :
                              '&#10003;';
             form.appendChild(save);
 
@@ -4913,7 +4984,7 @@ MediumEditor.extensions = {};
             close.setAttribute('href', '#');
             close.className = 'medium-editor-toobar-close';
             close.innerHTML = this.getEditorOption('buttonLabels') === 'fontawesome' ?
-                              '<i class="fa fa-times"></i>' :
+                              '<i class="far fa-times"></i>' :
                               '&times;';
             form.appendChild(close);
 
@@ -4974,7 +5045,7 @@ MediumEditor.extensions = {};
         action: 'fontSize',
         aria: 'increase/decrease font size',
         contentDefault: '&#xB1;', // ±
-        contentFA: '<i class="fa fa-text-height"></i>',
+        contentFA: '<i class="far fa-text-height"></i>',
 
         init: function () {
             MediumEditor.extensions.form.prototype.init.apply(this, arguments);
@@ -5080,7 +5151,7 @@ MediumEditor.extensions = {};
             save.setAttribute('href', '#');
             save.className = 'medium-editor-toobar-save';
             save.innerHTML = this.getEditorOption('buttonLabels') === 'fontawesome' ?
-                             '<i class="fa fa-check"></i>' :
+                             '<i class="far fa-check"></i>' :
                              '&#10003;';
             form.appendChild(save);
 
@@ -5091,7 +5162,7 @@ MediumEditor.extensions = {};
             close.setAttribute('href', '#');
             close.className = 'medium-editor-toobar-close';
             close.innerHTML = this.getEditorOption('buttonLabels') === 'fontawesome' ?
-                              '<i class="fa fa-times"></i>' :
+                              '<i class="far fa-times"></i>' :
                               '&times;';
             form.appendChild(close);
 
@@ -5142,6 +5213,7 @@ MediumEditor.extensions = {};
 
     MediumEditor.extensions.fontSize = FontSizeForm;
 }());
+
 (function () {
     'use strict';
 
@@ -5155,7 +5227,7 @@ MediumEditor.extensions = {};
         };
 
     /*jslint regexp: true*/
-    /*
+    /**
         jslint does not allow character negation, because the negation
         will not match any unicode characters. In the regexes in this
         block, negation is used specifically to match the end of an html
@@ -6563,6 +6635,8 @@ MediumEditor.extensions = {};
 (function () {
     'use strict';
 
+    var initialContent = {};
+
     // Event handlers that shouldn't be exposed externally
 
     function handleDisableExtraSpaces(event) {
@@ -6584,7 +6658,7 @@ MediumEditor.extensions = {};
             // if current text selection is empty OR previous sibling text is empty OR it is not a list
             if ((node && node.textContent.trim() === '' && node.nodeName.toLowerCase() !== 'li') ||
                 (node.previousElementSibling && node.previousElementSibling.nodeName.toLowerCase() !== 'br' &&
-                 node.previousElementSibling.textContent.trim() === '')) {
+                    node.previousElementSibling.textContent.trim() === '')) {
                 event.preventDefault();
             }
         }
@@ -6620,12 +6694,12 @@ MediumEditor.extensions = {};
             isHeader = /h\d/i;
 
         if (MediumEditor.util.isKey(event, [MediumEditor.util.keyCode.BACKSPACE, MediumEditor.util.keyCode.ENTER]) &&
-                // has a preceeding sibling
-                node.previousElementSibling &&
-                // in a header
-                isHeader.test(tagName) &&
-                // at the very end of the block
-                MediumEditor.selection.getCaretOffsets(node).left === 0) {
+            // has a preceeding sibling
+            node.previousElementSibling &&
+            // in a header
+            isHeader.test(tagName) &&
+            // at the very end of the block
+            MediumEditor.selection.getCaretOffsets(node).left === 0) {
             if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.BACKSPACE) && isEmpty.test(node.previousElementSibling.innerHTML)) {
                 // backspacing the begining of a header into an empty previous element will
                 // change the tagName of the current node to prevent one
@@ -6641,15 +6715,15 @@ MediumEditor.extensions = {};
                 event.preventDefault();
             }
         } else if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.DELETE) &&
-                    // between two sibling elements
-                    node.nextElementSibling &&
-                    node.previousElementSibling &&
-                    // not in a header
-                    !isHeader.test(tagName) &&
-                    // in an empty tag
-                    isEmpty.test(node.innerHTML) &&
-                    // when the next tag *is* a header
-                    isHeader.test(node.nextElementSibling.nodeName.toLowerCase())) {
+            // between two sibling elements
+            node.nextElementSibling &&
+            node.previousElementSibling &&
+            // not in a header
+            !isHeader.test(tagName) &&
+            // in an empty tag
+            isEmpty.test(node.innerHTML) &&
+            // when the next tag *is* a header
+            isHeader.test(node.nextElementSibling.nodeName.toLowerCase())) {
             // hitting delete in an empty element preceding a header, ex:
             //  <p>[CURSOR]</p><h1>Header</h1>
             // Will cause the h1 to become a paragraph.
@@ -6662,16 +6736,16 @@ MediumEditor.extensions = {};
 
             event.preventDefault();
         } else if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.BACKSPACE) &&
-                tagName === 'li' &&
-                // hitting backspace inside an empty li
-                isEmpty.test(node.innerHTML) &&
-                // is first element (no preceeding siblings)
-                !node.previousElementSibling &&
-                // parent also does not have a sibling
-                !node.parentElement.previousElementSibling &&
-                // is not the only li in a list
-                node.nextElementSibling &&
-                node.nextElementSibling.nodeName.toLowerCase() === 'li') {
+            tagName === 'li' &&
+            // hitting backspace inside an empty li
+            isEmpty.test(node.innerHTML) &&
+            // is first element (no preceeding siblings)
+            !node.previousElementSibling &&
+            // parent also does not have a sibling
+            !node.parentElement.previousElementSibling &&
+            // is not the only li in a list
+            node.nextElementSibling &&
+            node.nextElementSibling.nodeName.toLowerCase() === 'li') {
             // backspacing in an empty first list element in the first list (with more elements) ex:
             //  <ul><li>[CURSOR]</li><li>List Item 2</li></ul>
             // will remove the first <li> but add some extra element before (varies based on browser)
@@ -6693,16 +6767,16 @@ MediumEditor.extensions = {};
 
             event.preventDefault();
         } else if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.BACKSPACE) &&
-                (MediumEditor.util.getClosestTag(node, 'blockquote') !== false) &&
-                MediumEditor.selection.getCaretOffsets(node).left === 0) {
+            (MediumEditor.util.getClosestTag(node, 'blockquote') !== false) &&
+            MediumEditor.selection.getCaretOffsets(node).left === 0) {
 
             // when cursor is at the begining of the element and the element is <blockquote>
             // then pressing backspace key should change the <blockquote> to a <p> tag
             event.preventDefault();
             MediumEditor.util.execFormatBlock(this.options.ownerDocument, 'p');
         } else if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.ENTER) &&
-                (MediumEditor.util.getClosestTag(node, 'blockquote') !== false) &&
-                MediumEditor.selection.getCaretOffsets(node).right === 0) {
+            (MediumEditor.util.getClosestTag(node, 'blockquote') !== false) &&
+            MediumEditor.selection.getCaretOffsets(node).right === 0) {
 
             // when cursor is at the end of <blockquote>,
             // then pressing enter key should create <p> tag, not <blockquote>
@@ -6715,10 +6789,10 @@ MediumEditor.extensions = {};
 
             event.preventDefault();
         } else if (MediumEditor.util.isKey(event, MediumEditor.util.keyCode.BACKSPACE) &&
-                MediumEditor.util.isMediumEditorElement(node.parentElement) &&
-                !node.previousElementSibling &&
-                node.nextElementSibling &&
-                isEmpty.test(node.innerHTML)) {
+            MediumEditor.util.isMediumEditorElement(node.parentElement) &&
+            !node.previousElementSibling &&
+            node.nextElementSibling &&
+            isEmpty.test(node.innerHTML)) {
 
             // when cursor is in the first element, it's empty and user presses backspace,
             // do delete action instead to get rid of the first element and move caret to 2nd
@@ -6742,6 +6816,12 @@ MediumEditor.extensions = {};
             this.options.ownerDocument.execCommand('formatBlock', false, 'p');
         }
 
+        // https://github.com/yabwe/medium-editor/issues/1455
+        // if somehow we have the BR as the selected element, typing does nothing, so move the cursor
+        if (node.nodeName === 'BR') {
+            MediumEditor.selection.moveCursor(this.options.ownerDocument, node.parentElement);
+        }
+
         // https://github.com/yabwe/medium-editor/issues/834
         // https://github.com/yabwe/medium-editor/pull/382
         // Don't call format block if this is a block element (ie h1, figCaption, etc.)
@@ -6755,6 +6835,14 @@ MediumEditor.extensions = {};
                 this.options.ownerDocument.execCommand('unlink', false, null);
             } else if (!event.shiftKey && !event.ctrlKey) {
                 this.options.ownerDocument.execCommand('formatBlock', false, 'p');
+                // https://github.com/yabwe/medium-editor/issues/1455
+                // firefox puts the focus on the br - so we need to move the cursor to the newly created p
+                if (MediumEditor.util.isFF) {
+                    var newParagraph = node.querySelector('p');
+                    if (newParagraph) {
+                        MediumEditor.selection.moveCursor(this.options.ownerDocument, newParagraph);
+                    }
+                }
             }
         }
     }
@@ -6880,8 +6968,8 @@ MediumEditor.extensions = {};
         // If any of the elements don't have the toolbar disabled
         // We need a toolbar
         if (this.elements.every(function (element) {
-                return !!element.getAttribute('data-disable-toolbar');
-            })) {
+            return !!element.getAttribute('data-disable-toolbar');
+        })) {
             return false;
         }
 
@@ -7232,8 +7320,6 @@ MediumEditor.extensions = {};
         }
     }
 
-    var initialContent = {};
-
     MediumEditor.prototype = {
         // NOT DOCUMENTED - exposed for backwards compatability
         init: function (elements, options) {
@@ -7504,13 +7590,23 @@ MediumEditor.extensions = {};
                 MediumEditor.util.cleanListDOM(this.options.ownerDocument, this.getSelectedParentElement());
             }
 
+            // https://github.com/yabwe/medium-editor/issues/1496
+            // But only if something is selected i.e, getSelectedParentElement !== {}
+            if (this.getSelectedParentElement().length > 0 && MediumEditor.util.isFF) {
+                MediumEditor.util.getContainerEditorElement(this.getSelectedParentElement()).focus();
+            }
+
             this.checkSelection();
             return result;
         },
 
         getSelectedParentElement: function (range) {
             if (range === undefined) {
-                range = this.options.contentWindow.getSelection().getRangeAt(0);
+                try {
+                    range = this.options.contentWindow.getSelection().getRangeAt(0);
+                } catch (err) {
+                    return {};
+                }
             }
             return MediumEditor.selection.getSelectedParentElement(range);
         },
@@ -7665,7 +7761,7 @@ MediumEditor.extensions = {};
                                     0,
                                     parentElement.lastChild,
                                     parentElement.lastChild.nodeType === 3 ?
-                                    parentElement.lastChild.nodeValue.length : parentElement.lastChild.childNodes.length
+                                        parentElement.lastChild.nodeValue.length : parentElement.lastChild.childNodes.length
                                 );
                             } else {
                                 MediumEditor.selection.select(

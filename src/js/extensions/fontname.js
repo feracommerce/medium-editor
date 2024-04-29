@@ -7,7 +7,7 @@
         action: 'fontName',
         aria: 'change font name',
         contentDefault: '&#xB1;', // ±
-        contentFA: '<i class="fa fa-font"></i>',
+        contentFA: '<i class="far fa-font"></i>',
 
         fonts: ['', 'Arial', 'Verdana', 'Times New Roman'],
 
@@ -120,7 +120,7 @@
             save.setAttribute('href', '#');
             save.className = 'medium-editor-toobar-save';
             save.innerHTML = this.getEditorOption('buttonLabels') === 'fontawesome' ?
-                             '<i class="fa fa-check"></i>' :
+                             '<i class="far fa-check"></i>' :
                              '&#10003;';
             form.appendChild(save);
 
@@ -131,7 +131,7 @@
             close.setAttribute('href', '#');
             close.className = 'medium-editor-toobar-close';
             close.innerHTML = this.getEditorOption('buttonLabels') === 'fontawesome' ?
-                              '<i class="fa fa-times"></i>' :
+                              '<i class="far fa-times"></i>' :
                               '&times;';
             form.appendChild(close);
 

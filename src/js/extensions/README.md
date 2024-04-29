@@ -408,7 +408,7 @@ MediumEditor.extensions.anchor = MediumEditor.extensions.form.extend({
 
     template.push(
       '<a href="#" class="medium-editor-toolbar-save">',
-      this.getEditorOption('buttonLabels') === 'fontawesome' ? '<i class="fa fa-check"></i>' : this.formSaveLabel,
+      this.getEditorOption('buttonLabels') === 'fontawesome' ? '<i class="far fa-check"></i>' : this.formSaveLabel,
       '</a>'
     );
 
@@ -684,7 +684,7 @@ var CustomButtonExtension = MediumEditor.extensions.button.extend({
   name: 'custom-button-extension',
 
   contentDefault: '<b>H</b>',
-  contentFA: '<i class="fa fa-paint-brush"></i>',
+  contentFA: '<i class="far fa-paint-brush"></i>',
 
   // ... other properties/methods ...
 })

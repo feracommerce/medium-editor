@@ -43,7 +43,7 @@
         aria: 'link',
         tagNames: ['a'],
         contentDefault: '<b>#</b>',
-        contentFA: '<i class="fa fa-link"></i>',
+        contentFA: '<i class="far fa-link"></i>',
 
         init: function () {
             MediumEditor.extensions.form.prototype.init.apply(this, arguments);
@@ -94,12 +94,12 @@
 
             template.push(
                 '<a href="#" class="medium-editor-toolbar-save">',
-                this.getEditorOption('buttonLabels') === 'fontawesome' ? '<i class="fa fa-check"></i>' : this.formSaveLabel,
+                this.getEditorOption('buttonLabels') === 'fontawesome' ? '<i class="far fa-check"></i>' : this.formSaveLabel,
                 '</a>'
             );
 
             template.push('<a href="#" class="medium-editor-toolbar-close">',
-                this.getEditorOption('buttonLabels') === 'fontawesome' ? '<i class="fa fa-times"></i>' : this.formCloseLabel,
+                this.getEditorOption('buttonLabels') === 'fontawesome' ? '<i class="far fa-times"></i>' : this.formCloseLabel,
                 '</a>');
 
             // both of these options are slightly moot with the ability to

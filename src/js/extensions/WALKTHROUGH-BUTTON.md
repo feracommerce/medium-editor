@@ -94,7 +94,7 @@ var HighlighterButton = MediumEditor.Extension.extend({
   init: function () {
     this.button = this.document.createElement('button');
     this.button.classList.add('medium-editor-action');
-    this.button.innerHTML = '<i class="fa fa-paint-brush"></i>';
+    this.button.innerHTML = '<i class="far fa-paint-brush"></i>';
     this.button.title = 'Highlight';
   },
 
@@ -120,7 +120,7 @@ var editor = new MediumEditor('.editable', {
 
 To change the apperances, we have:
 
-1. Changed the `innerHTML` of our button to be `<i class="fa fa-paint-brush"></i>` in the `init()` method
+1. Changed the `innerHTML` of our button to be `<i class="far fa-paint-brush"></i>` in the `init()` method
 1. Added 'Highlight' as a title attribute to enable the tooltip
 1. Passed the `buttonLabels: 'fontawesome'` option when initializing MediumEditor to enable font-awesome icons for all buttons in the toolbar
 
@@ -144,7 +144,7 @@ var HighlighterButton = MediumEditor.Extension.extend({
 
     this.button = this.document.createElement('button');
     this.button.classList.add('medium-editor-action');
-    this.button.innerHTML = '<i class="fa fa-paint-brush"></i>';
+    this.button.innerHTML = '<i class="far fa-paint-brush"></i>';
     this.button.title = 'Highlight';
 
     this.on(this.button, 'click', this.handleClick.bind(this));
@@ -207,7 +207,7 @@ var HighlighterButton = MediumEditor.Extension.extend({
 
     this.button = this.document.createElement('button');
     this.button.classList.add('medium-editor-action');
-    this.button.innerHTML = '<i class="fa fa-paint-brush"></i>';
+    this.button.innerHTML = '<i class="far fa-paint-brush"></i>';
     this.button.title = 'Highlight';
 
     this.on(this.button, 'click', this.handleClick.bind(this));
@@ -272,7 +272,7 @@ var HighlighterButton = MediumEditor.extensions.button.extend({
 
   tagNames: ['mark'], // nodeName which indicates the button should be 'active' when isAlreadyApplied() is called
   contentDefault: '<b>H</b>', // default innerHTML of the button
-  contentFA: '<i class="fa fa-paint-brush"></i>', // innerHTML of button when 'fontawesome' is being used
+  contentFA: '<i class="far fa-paint-brush"></i>', // innerHTML of button when 'fontawesome' is being used
   aria: 'Highlight', // used as both aria-label and title attributes
   action: 'highlight', // used as the data-action attribute of the button
 
